@@ -662,6 +662,15 @@ class RunningMaskSalienceScorer(RunningSalienceScorer):
 class JointRunningMaskSalienceScorer(RunningMaskSalienceScorer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.param_controller.teacher_config is None:
+            return
+        # Add a safety check for the attention head size calculation
+        self.d_model = self.model.config.d_model
+        self.num_heads = self.model.config.num_heads
+        self.attention_head_size = self.d_model // self.num_heads
+        
+        # Verify the division is clean
+        assert self.d_model % self.num_heads == 0, f"d_model ({self.d_model}) must be divisible by num_heads ({self.num_heads})"
         
     def _get_combined_grafting_score(self, m: str):
         if m.startswith('hidden'):

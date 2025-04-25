@@ -15,3 +15,4 @@ legacy_scripts/**
 **/*backup*
 data
 data/**
+cache

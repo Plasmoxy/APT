@@ -66,6 +66,7 @@ task2evalkey = {
     'stsb': 'eval_pearson',
     'cnndm': 'eval_loss',
     'xsum': 'eval_loss',
+    'gigatrue': 'eval_loss',
     'wmt16': 'eval_loss',
     'alpaca': 'eval_loss',
     'alpaca_gpt4': 'eval_loss',

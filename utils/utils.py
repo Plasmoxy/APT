@@ -438,6 +438,8 @@ def build_seq2seq_data(data_args, training_args, tokenizer, **kwargs):
         return build_cnn_dm_data(data_args, training_args, tokenizer)
     elif data_args.task_name == 'wmt16':
         return build_wmt16_data(data_args, training_args, tokenizer)
+    elif data_args.task_name == 'gigatrue':
+        return build_gigatrue_data(data_args, training_args, tokenizer)
     elif 'alpaca' in data_args.task_name:
         return build_alpaca_data(data_args, training_args, tokenizer, **kwargs)
     else:
@@ -462,6 +464,56 @@ def build_xsum_data(data_args, training_args, tokenizer):
     tokenized_datasets = tokenized_datasets.remove_columns(raw_datasets["train"].column_names)
 
     return tokenized_datasets["train"] if training_args.do_train else None, tokenized_datasets["validation"] if training_args.do_eval else None, tokenized_datasets["test"] if training_args.do_predict else None, raw_datasets
+def build_gigatrue_data(data_args, training_args, tokenizer):
+    import os
+    import pickle
+    
+    # Create cache directory if it doesn't exist
+    cache_dir = "cache"
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+        
+    # Create cache filename based on dataset name and lengths
+    cache_file = os.path.join(cache_dir, f"gigatrue_i{data_args.max_input_length}_t{data_args.max_target_length}.pkl")
+    
+    # Check if cached version exists
+    if os.path.exists(cache_file):
+        print(f"Loading cached tokenized datasets from {cache_file}")
+        with open(cache_file, 'rb') as f:
+            tokenized_datasets = pickle.load(f)
+            raw_datasets = load_dataset("Plasmoxy/gigatrue")
+            return tokenized_datasets["train"] if training_args.do_train else None, \
+                   tokenized_datasets["validation"] if training_args.do_eval else None, \
+                   tokenized_datasets["test"] if training_args.do_predict else None, \
+                   raw_datasets
+
+    # If no cache exists, process the data
+    raw_datasets = load_dataset("Plasmoxy/gigatrue")
+    max_input_length, max_target_length = data_args.max_input_length, data_args.max_target_length
+    
+    def preprocess_function(examples):
+        inputs = ["summarize: " + doc for doc in examples["article"]]
+        model_inputs = tokenizer(inputs, max_length=max_input_length, truncation=True)
+
+        # Setup the tokenizer for targets
+        with tokenizer.as_target_tokenizer():
+            labels = tokenizer(examples["summary"], max_length=max_target_length, truncation=True)
+
+        model_inputs["labels"] = labels["input_ids"]
+        return model_inputs
+    
+    tokenized_datasets = raw_datasets.map(preprocess_function, batched=True)
+    tokenized_datasets = tokenized_datasets.remove_columns(raw_datasets["train"].column_names)
+
+    # Cache the processed datasets
+    print(f"Caching tokenized datasets to {cache_file}")
+    with open(cache_file, 'wb') as f:
+        pickle.dump(tokenized_datasets, f)
+
+    return tokenized_datasets["train"] if training_args.do_train else None, \
+           tokenized_datasets["validation"] if training_args.do_eval else None, \
+           tokenized_datasets["test"] if training_args.do_predict else None, \
+           raw_datasets
 
 def build_cnn_dm_data(data_args, training_args, tokenizer):
     raw_datasets = load_dataset("cnn_dailymail", '3.0.0')

@@ -17,6 +17,7 @@ task_to_keys = {
 
 seq2seq_task_to_keys = {
     'xsum': ('document', 'summary'),
+    'gigatrue': ('article', 'summary'),
     'cnndm': ('article', 'highlights'),
     'wmt16': ('en', 'ro'),
 }

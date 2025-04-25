@@ -29,6 +29,7 @@ task2metric = {
     'cola': 'eval_matthews_correlation',
     'stsb': 'eval_pearson',
     'xsum': 'eval_rouge1',
+    'gigatrue': 'eval_rouge1',
 }
 
 def gather_raw_report(root_dir: str):
