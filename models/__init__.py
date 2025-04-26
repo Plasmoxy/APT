@@ -198,10 +198,12 @@ def build_model(model_args, data_args, training_args, t_name=None, raw_datasets=
     
     if os.path.exists(model_path):
         original_config_path = json.load(open(os.path.join(model_path, 'config.json'), 'r'))['_name_or_path']
+        print("Original config path: ", original_config_path)
+        
         model_config = config
         print("Pruned heads:", config.pruned_heads, flush=True)
         model = Model.from_pretrained(
-            original_config_path,
+            model_path,
             from_tf=bool(".ckpt" in model_path),
             config=config,
             cache_dir=model_args.cache_dir,
@@ -209,6 +211,7 @@ def build_model(model_args, data_args, training_args, t_name=None, raw_datasets=
             token=kwargs.get('token', None),
             low_cpu_mem_usage='llama' in config.model_type,
             torch_dtype = torch.bfloat16 if 'llama' in config.model_type else 'auto',
+            ignore_mismatched_sizes=True
         )
         if os.path.exists(os.path.join(model_path, "pytorch_model.bin")):
             bin_fns = []
